@@ -5,15 +5,15 @@ export default {
     extend: {
       colors: {
         kali: {
-          bg: '#0d1117',
-          surface: '#161b22',
-          border: '#30363d',
-          accent: '#58a6ff',
-          green: '#3fb950',
-          red: '#f85149',
-          yellow: '#d29922',
-          text: '#e6edf3',
-          muted: '#8b949e',
+          bg:      'var(--kali-bg)',
+          surface: 'var(--kali-surface)',
+          border:  'var(--kali-border)',
+          accent:  'var(--kali-accent)',
+          green:   'var(--kali-green)',
+          red:     'var(--kali-red)',
+          yellow:  'var(--kali-yellow)',
+          text:    'var(--kali-text)',
+          muted:   'var(--kali-muted)',
         },
       },
       fontFamily: {

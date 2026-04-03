@@ -25,6 +25,9 @@ const useAppStore = create((set, get) => ({
   // Findings
   findings: [],
 
+  // Theme
+  theme: localStorage.getItem('theme') || 'dark',
+
   // Agent state
   isConnected: false,
   isAgentRunning: false,
@@ -250,6 +253,10 @@ const useAppStore = create((set, get) => ({
     }))
   },
 
+  onFindingAdded: (finding) => {
+    set((s) => ({ findings: [...s.findings, finding] }))
+  },
+
   onDisconnected: () => {
     set({ isConnected: false, isAgentRunning: false })
   },
@@ -295,6 +302,13 @@ const useAppStore = create((set, get) => ({
   },
 
   clearTerminal: () => set({ terminalLines: [] }),
+
+  toggleTheme: () => {
+    const next = get().theme === 'dark' ? 'light' : 'dark'
+    localStorage.setItem('theme', next)
+    document.documentElement.classList.toggle('light', next === 'light')
+    set({ theme: next })
+  },
 }))
 
 export { useAppStore }

@@ -2,13 +2,39 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Dark mode (default) ───────────────────────────────────────────────────── */
+:root {
+  --kali-bg:      #0d1117;
+  --kali-surface: #161b22;
+  --kali-border:  #30363d;
+  --kali-accent:  #58a6ff;
+  --kali-green:   #3fb950;
+  --kali-red:     #f85149;
+  --kali-yellow:  #d29922;
+  --kali-text:    #e6edf3;
+  --kali-muted:   #8b949e;
+}
+
+/* ── Light mode ────────────────────────────────────────────────────────────── */
+.light {
+  --kali-bg:      #f6f8fa;
+  --kali-surface: #ffffff;
+  --kali-border:  #d0d7de;
+  --kali-accent:  #0969da;
+  --kali-green:   #1a7f37;
+  --kali-red:     #cf222e;
+  --kali-yellow:  #9a6700;
+  --kali-text:    #1f2328;
+  --kali-muted:   #656d76;
+}
+
 * {
   box-sizing: border-box;
 }
 
 body {
-  background-color: #0d1117;
-  color: #e6edf3;
+  background-color: var(--kali-bg);
+  color: var(--kali-text);
   font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
   margin: 0;
   padding: 0;
@@ -21,14 +47,14 @@ body {
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #161b22;
+  background: var(--kali-surface);
 }
 ::-webkit-scrollbar-thumb {
-  background: #30363d;
+  background: var(--kali-border);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #8b949e;
+  background: var(--kali-muted);
 }
 
 /* xterm overrides */

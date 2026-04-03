@@ -1,17 +1,34 @@
 from __future__ import annotations
 import json
 import logging
+import re
 from datetime import datetime, timezone
 from typing import Any, Awaitable, Callable
 
 from backend.config import settings
 from backend.agent.ollama_client import ollama_client
 from backend.agent.tool_registry import tool_registry
-from backend.sessions.models import Session, Message
+from backend.sessions.models import Session, Message, Finding, FindingSeverity
 
 logger = logging.getLogger(__name__)
 
 WsSend = Callable[[dict[str, Any]], Awaitable[None]]
+
+# Marker pattern the AI is instructed to embed when it discovers a finding
+_FINDING_RE = re.compile(r'%%FINDING%%\s*(\{.*?\})\s*%%END%%', re.DOTALL)
+
+
+def _extract_findings(content: str) -> tuple[str, list[dict]]:
+    """Parse %%FINDING%%{...}%%END%% blocks from assistant content.
+    Returns cleaned content (markers stripped) and list of finding dicts."""
+    findings: list[dict] = []
+    for m in _FINDING_RE.finditer(content):
+        try:
+            findings.append(json.loads(m.group(1)))
+        except json.JSONDecodeError:
+            pass
+    clean = _FINDING_RE.sub('', content).strip()
+    return clean, findings
 
 
 def _build_system_prompt(session: Session) -> str:
@@ -41,6 +58,12 @@ RULES:
 4. Ask for explicit confirmation before running destructive, very noisy, or credential-stuffing attacks.
 5. After each tool run, summarize findings in a concise structured format.
 6. If a tool returns an error, diagnose the issue and suggest next steps.
+
+AUTO-FINDING REPORTING:
+Whenever you identify a vulnerability, misconfiguration, exposed credential, or security weakness, you MUST emit a structured finding marker inline in your response using this exact format (no spaces inside the markers, valid JSON only):
+%%FINDING%%{{"title":"<short title>","severity":"<critical|high|medium|low|info>","description":"<what was found>","evidence":"<relevant output or proof>","recommendation":"<how to fix>"}}%%END%%
+
+Emit one marker per distinct finding. These are automatically captured into the Findings tracker — do not skip them. Always emit findings for: open ports with vulnerable/interesting services, discovered credentials, SQL/command injection, XSS, default passwords, unpatched CVEs, exposed admin panels, weak configurations, and any exploitable condition.
 
 Begin by understanding the user's objective. Plan your approach before running tools."""
 
@@ -112,21 +135,46 @@ async def run_agent_loop(
         content = response_msg.get("content", "") or ""
 
         if not tool_calls:
-            # Final text response — stream it back
+            # Final text response — extract findings, then stream back
             if content:
-                # Record assistant message
-                asst_msg = Message(role="assistant", content=content)
+                clean_content, raw_findings = _extract_findings(content)
+
+                # Auto-create any findings the AI embedded in its response
+                for fd in raw_findings:
+                    try:
+                        severity_val = fd.get("severity", "info").lower()
+                        # Validate severity against enum values
+                        if severity_val not in [s.value for s in FindingSeverity]:
+                            severity_val = "info"
+                        finding = Finding(
+                            title=fd.get("title", "Auto-detected finding"),
+                            severity=FindingSeverity(severity_val),
+                            description=fd.get("description", ""),
+                            evidence=fd.get("evidence", ""),
+                            recommendation=fd.get("recommendation", ""),
+                        )
+                        await session_manager.add_finding(session.id, finding)
+                        await ws_send({
+                            "type": "finding_added",
+                            "finding": json.loads(finding.model_dump_json()),
+                        })
+                        logger.info(f"Auto-finding added: [{finding.severity}] {finding.title}")
+                    except Exception as e:
+                        logger.warning(f"Failed to save auto-finding: {e}")
+
+                # Record assistant message with markers stripped
+                asst_msg = Message(role="assistant", content=clean_content)
                 session.messages.append(asst_msg)
                 await session_manager.add_message(session.id, asst_msg)
 
                 # Send tokens word-by-word for a streaming feel
-                words = content.split(" ")
+                words = clean_content.split(" ")
                 for i, word in enumerate(words):
                     token = word + (" " if i < len(words) - 1 else "")
                     await ws_send({"type": "assistant_token", "token": token})
 
-                await ws_send({"type": "assistant_done", "content": content})
-                final_content = content
+                await ws_send({"type": "assistant_done", "content": clean_content})
+                final_content = clean_content
             break
 
         # Record assistant message with tool_calls

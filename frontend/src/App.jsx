@@ -8,6 +8,12 @@ import RightPanel from './components/RightPanel'
 export default function App() {
   const store = useAppStore()
 
+  // Apply saved theme on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('theme') || 'dark'
+    document.documentElement.classList.toggle('light', saved === 'light')
+  }, [])
+
   // Wire wsManager dispatch to store actions
   useEffect(() => {
     wsManager._dispatch = (type, payload) => {
@@ -32,6 +38,9 @@ export default function App() {
           break
         case 'assistant_done':
           store.onAssistantDone(payload.content)
+          break
+        case 'finding_added':
+          store.onFindingAdded(payload.finding)
           break
         case 'error':
           store.onError(payload.message)

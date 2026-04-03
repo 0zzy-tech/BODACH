@@ -36,7 +36,7 @@ function AboutModal({ onClose }) {
 }
 
 export default function SessionSidebar() {
-  const { sessions, activeSessionId, createSession, deleteSession, setActiveSession, renameSession } = useAppStore()
+  const { sessions, activeSessionId, createSession, deleteSession, setActiveSession, renameSession, theme, toggleTheme } = useAppStore()
   const [editingId, setEditingId] = useState(null)
   const [editName, setEditName] = useState('')
   const [reportSessionId, setReportSessionId] = useState(null)
@@ -143,8 +143,15 @@ export default function SessionSidebar() {
       {/* Ollama config at bottom */}
       <OllamaConfig />
 
-      {/* About footer */}
-      <div className="border-t border-kali-border px-4 py-2 flex justify-center">
+      {/* Footer: theme toggle + about */}
+      <div className="border-t border-kali-border px-4 py-2 flex items-center justify-between">
+        <button
+          onClick={toggleTheme}
+          className="text-kali-muted hover:text-kali-accent text-xs transition-colors"
+          title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+        >
+          {theme === 'dark' ? '☀ Light' : '☾ Dark'}
+        </button>
         <button
           onClick={() => setShowAbout(true)}
           className="text-kali-muted hover:text-kali-accent text-xs transition-colors"
