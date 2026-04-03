@@ -5,7 +5,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from backend.sessions.manager import session_manager
-from backend.sessions.models import Session, SessionSummary, TargetConfig, Finding, FindingSeverity
+from backend.sessions.models import Session, SessionSummary, TargetConfig, Finding, FindingSeverity, Credential, CredentialType
 
 router = APIRouter(prefix="/sessions", tags=["sessions"])
 
@@ -111,3 +111,58 @@ async def delete_finding(session_id: str, finding_id: str) -> None:
     ok = await session_manager.delete_finding(session_id, finding_id)
     if not ok:
         raise HTTPException(status_code=404, detail="Finding not found")
+
+
+# ── Credentials endpoints ──────────────────────────────────────────────────────
+
+class CreateCredentialRequest(BaseModel):
+    username: str = ""
+    secret: str
+    cred_type: CredentialType = CredentialType.plaintext
+    service: str = ""
+    host: str = ""
+    notes: str = ""
+    cracked: bool = False
+
+
+class UpdateCredentialRequest(BaseModel):
+    username: str | None = None
+    secret: str | None = None
+    cred_type: CredentialType | None = None
+    service: str | None = None
+    host: str | None = None
+    notes: str | None = None
+    cracked: bool | None = None
+
+
+@router.get("/{session_id}/credentials", response_model=list[Credential])
+async def list_credentials(session_id: str) -> list[Credential]:
+    session = await session_manager.get(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    return session.credentials
+
+
+@router.post("/{session_id}/credentials", response_model=Credential, status_code=201)
+async def create_credential(session_id: str, req: CreateCredentialRequest) -> Credential:
+    credential = Credential(**req.model_dump())
+    result = await session_manager.add_credential(session_id, credential)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+    return result
+
+
+@router.put("/{session_id}/credentials/{cred_id}", response_model=Credential)
+async def update_credential(session_id: str, cred_id: str, req: UpdateCredentialRequest) -> Credential:
+    data = {k: v for k, v in req.model_dump().items() if v is not None}
+    result = await session_manager.update_credential(session_id, cred_id, data)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Credential not found")
+    return result
+
+
+@router.delete("/{session_id}/credentials/{cred_id}", status_code=204)
+async def delete_credential(session_id: str, cred_id: str) -> None:
+    ok = await session_manager.delete_credential(session_id, cred_id)
+    if not ok:
+        raise HTTPException(status_code=404, detail="Credential not found")

@@ -1,4 +1,5 @@
 from __future__ import annotations
+import asyncio
 import json
 import logging
 from typing import Any
@@ -43,6 +44,10 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str) -> None:
         except Exception:
             pass
 
+    # Per-connection cancel event — set when client sends {"type": "cancel"}
+    cancel_event = asyncio.Event()
+    agent_task: asyncio.Task | None = None
+
     try:
         while True:
             raw = await websocket.receive_text()
@@ -63,11 +68,18 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str) -> None:
                 if not session:
                     await ws_send({"type": "error", "message": "Session expired"})
                     break
+                # Reset cancel event for each new message
+                cancel_event.clear()
                 try:
-                    await run_agent_loop(session, content, ws_send)
+                    agent_task = asyncio.current_task()
+                    await run_agent_loop(session, content, ws_send, cancel_event)
                 except Exception as e:
                     logger.exception(f"Agent loop error for session {session_id}")
                     await ws_send({"type": "error", "message": f"Agent error: {e}"})
+
+            elif msg_type == "cancel":
+                cancel_event.set()
+                logger.info(f"Cancel requested for session {session_id}")
 
             elif msg_type == "ping":
                 await ws_send({"type": "pong"})

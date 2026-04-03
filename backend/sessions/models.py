@@ -25,6 +25,27 @@ class Finding(BaseModel):
     timestamp: datetime = Field(default_factory=datetime.utcnow)
 
 
+class CredentialType(str, Enum):
+    plaintext = "plaintext"
+    hash = "hash"
+    ssh_key = "ssh_key"
+    api_key = "api_key"
+    token = "token"
+    other = "other"
+
+
+class Credential(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    username: str = ""
+    secret: str
+    cred_type: CredentialType = CredentialType.plaintext
+    service: str = ""
+    host: str = ""
+    notes: str = ""
+    cracked: bool = False
+    timestamp: datetime = Field(default_factory=datetime.utcnow)
+
+
 class TargetConfig(BaseModel):
     ip: str | None = None
     domain: str | None = None
@@ -49,7 +70,11 @@ class Session(BaseModel):
     last_active: datetime = Field(default_factory=datetime.utcnow)
     messages: list[Message] = []
     findings: list[Finding] = []
+    credentials: list[Credential] = []
     target_config: TargetConfig = Field(default_factory=TargetConfig)
+
+
+_SEVERITY_ORDER = {"critical": 0, "high": 1, "medium": 2, "low": 3, "info": 4}
 
 
 class SessionSummary(BaseModel):
@@ -60,3 +85,5 @@ class SessionSummary(BaseModel):
     message_count: int
     target_ip: str | None
     target_domain: str | None
+    finding_count: int = 0
+    highest_severity: str | None = None

@@ -42,6 +42,12 @@ export default function App() {
         case 'finding_added':
           store.onFindingAdded(payload.finding)
           break
+        case 'credential_added':
+          store.onCredentialAdded(payload.credential)
+          break
+        case 'cancelled':
+          store.onCancelled()
+          break
         case 'error':
           store.onError(payload.message)
           break

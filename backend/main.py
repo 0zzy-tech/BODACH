@@ -9,7 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
 from backend.sessions.manager import session_manager
-from backend.api.routes import sessions, config, reports
+from backend.api.routes import sessions, config, reports, loot
 from backend.api import websocket as ws_router
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
@@ -46,6 +46,7 @@ api_prefix = "/api/v1"
 app.include_router(sessions.router, prefix=api_prefix)
 app.include_router(config.router, prefix=api_prefix)
 app.include_router(reports.router, prefix=api_prefix)
+app.include_router(loot.router, prefix=api_prefix)
 app.include_router(ws_router.router)
 
 # Serve React frontend

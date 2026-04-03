@@ -8,7 +8,7 @@ from typing import Optional
 import aiosqlite
 
 from backend.config import settings
-from backend.sessions.models import Session, SessionSummary, TargetConfig, Message, Finding
+from backend.sessions.models import Session, SessionSummary, TargetConfig, Message, Finding, Credential, _SEVERITY_ORDER
 
 logger = logging.getLogger(__name__)
 
@@ -102,8 +102,13 @@ class SessionManager:
 
     async def list_all(self) -> list[SessionSummary]:
         sessions = sorted(self._sessions.values(), key=lambda s: s.last_active, reverse=True)
-        return [
-            SessionSummary(
+        result = []
+        for s in sessions:
+            highest: str | None = None
+            if s.findings:
+                best = min(s.findings, key=lambda f: _SEVERITY_ORDER.get(f.severity.value, 99))
+                highest = best.severity.value
+            result.append(SessionSummary(
                 id=s.id,
                 name=s.name,
                 created_at=s.created_at,
@@ -111,9 +116,10 @@ class SessionManager:
                 message_count=len(s.messages),
                 target_ip=s.target_config.ip,
                 target_domain=s.target_config.domain,
-            )
-            for s in sessions
-        ]
+                finding_count=len(s.findings),
+                highest_severity=highest,
+            ))
+        return result
 
     async def delete(self, session_id: str) -> bool:
         async with self._lock:
@@ -176,6 +182,38 @@ class SessionManager:
         before = len(session.findings)
         session.findings = [f for f in session.findings if f.id != finding_id]
         if len(session.findings) == before:
+            return False
+        await self._save_to_db(session)
+        return True
+
+    async def add_credential(self, session_id: str, credential: Credential) -> Optional[Credential]:
+        session = self._sessions.get(session_id)
+        if not session:
+            return None
+        session.credentials.append(credential)
+        session.last_active = _utcnow()
+        await self._save_to_db(session)
+        return credential
+
+    async def update_credential(self, session_id: str, cred_id: str, data: dict) -> Optional[Credential]:
+        session = self._sessions.get(session_id)
+        if not session:
+            return None
+        for i, c in enumerate(session.credentials):
+            if c.id == cred_id:
+                updated = c.model_copy(update=data)
+                session.credentials[i] = updated
+                await self._save_to_db(session)
+                return updated
+        return None
+
+    async def delete_credential(self, session_id: str, cred_id: str) -> bool:
+        session = self._sessions.get(session_id)
+        if not session:
+            return False
+        before = len(session.credentials)
+        session.credentials = [c for c in session.credentials if c.id != cred_id]
+        if len(session.credentials) == before:
             return False
         await self._save_to_db(session)
         return True

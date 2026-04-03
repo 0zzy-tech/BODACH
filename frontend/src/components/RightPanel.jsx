@@ -2,16 +2,20 @@ import { useState } from 'react'
 import TerminalOutput from './TerminalOutput'
 import TargetConfig from './TargetConfig'
 import FindingsPanel from './FindingsPanel'
+import CredentialVault from './CredentialVault'
+import LootPanel from './LootPanel'
 import { useAppStore } from '../store/appStore'
 
 const TABS = [
   { key: 'terminal', label: 'Terminal' },
   { key: 'target', label: 'Target' },
   { key: 'findings', label: 'Findings' },
+  { key: 'creds', label: 'Creds' },
+  { key: 'loot', label: 'Loot' },
 ]
 
 export default function RightPanel() {
-  const { activeSessionId, findings } = useAppStore()
+  const { activeSessionId, findings, credentials } = useAppStore()
   const [tab, setTab] = useState('terminal')
 
   if (!activeSessionId) return null
@@ -36,6 +40,11 @@ export default function RightPanel() {
                 {findings.length}
               </span>
             )}
+            {key === 'creds' && credentials.length > 0 && (
+              <span className="ml-1 bg-kali-green text-kali-bg text-xs rounded-full px-1 leading-none">
+                {credentials.length}
+              </span>
+            )}
           </button>
         ))}
       </div>
@@ -48,8 +57,12 @@ export default function RightPanel() {
           </div>
         ) : tab === 'target' ? (
           <TargetConfig />
-        ) : (
+        ) : tab === 'findings' ? (
           <FindingsPanel />
+        ) : tab === 'creds' ? (
+          <CredentialVault />
+        ) : (
+          <LootPanel />
         )}
       </div>
     </aside>

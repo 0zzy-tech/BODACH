@@ -104,7 +104,13 @@ export default function SessionSidebar() {
                   onClick={(e) => e.stopPropagation()}
                 />
               ) : (
-                <p className="text-xs text-kali-text truncate font-medium">{s.name}</p>
+                <div className="flex items-center gap-1.5">
+                  <p className="text-xs text-kali-text truncate font-medium">{s.name}</p>
+                  {s.highest_severity === 'critical' && <span className="shrink-0 text-[10px] font-bold text-white bg-red-600 rounded px-1 leading-tight">CRIT</span>}
+                  {s.highest_severity === 'high' && <span className="shrink-0 text-[10px] font-bold text-white bg-orange-500 rounded px-1 leading-tight">HIGH</span>}
+                  {s.highest_severity === 'medium' && <span className="shrink-0 text-[10px] font-bold text-black bg-yellow-400 rounded px-1 leading-tight">MED</span>}
+                  {s.highest_severity === 'low' && <span className="shrink-0 text-[10px] font-bold text-white bg-blue-500 rounded px-1 leading-tight">LOW</span>}
+                </div>
               )}
               {(s.target_ip || s.target_domain) && (
                 <p className="text-xs text-kali-muted truncate">

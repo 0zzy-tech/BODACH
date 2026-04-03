@@ -106,6 +106,53 @@ function Message({ msg, searchQuery = '' }) {
   return null
 }
 
+const QUICK_ACTIONS = [
+  {
+    label: 'Initial Recon',
+    prompt: 'Run a full reconnaissance scan on the target. Start with port discovery, then service detection, OS fingerprinting, and web fingerprinting if HTTP is open.',
+  },
+  {
+    label: 'Web Scan',
+    prompt: 'Enumerate all web services on the target. Check for hidden directories, known vulnerabilities, CMS detection, and SQL injection points.',
+  },
+  {
+    label: 'AD Enumerate',
+    prompt: 'Enumerate Active Directory. Check SMB, Kerberos, LDAP. List users, groups, shares, and look for AS-REP roasting and Kerberoasting opportunities.',
+  },
+  {
+    label: 'Find Exploits',
+    prompt: 'Based on what you have found so far, search Exploit-DB for applicable exploits and suggest the best attack path.',
+  },
+  {
+    label: 'Crack Hashes',
+    prompt: 'Check if there are any hashes in the findings or loot. If so, attempt to crack them with john or hashcat.',
+  },
+  {
+    label: 'Full Auto',
+    prompt: 'Run a comprehensive automated penetration test on the target. Cover all attack surfaces: network, web, credentials, Active Directory if present. Document all findings.',
+  },
+]
+
+function QuickActions({ onSend, disabled }) {
+  return (
+    <div className="mt-8 text-center">
+      <p className="text-kali-muted text-xs mb-4">Configure your target then choose a quick action or type below</p>
+      <div className="flex flex-wrap justify-center gap-2 px-4">
+        {QUICK_ACTIONS.map(({ label, prompt }) => (
+          <button
+            key={label}
+            onClick={() => onSend(prompt)}
+            disabled={disabled}
+            className="px-3 py-1.5 border border-kali-border rounded-full text-xs text-kali-muted hover:text-kali-accent hover:border-kali-accent disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function highlightText(text, query) {
   if (!query) return text
   const parts = text.split(new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'))
@@ -117,7 +164,7 @@ function highlightText(text, query) {
 }
 
 export default function ChatPanel() {
-  const { messages, activeSessionId, isConnected, isAgentRunning, sendMessage, createSession } = useAppStore()
+  const { messages, activeSessionId, isConnected, isAgentRunning, sendMessage, cancelAgent, createSession } = useAppStore()
   const [input, setInput] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [searchOpen, setSearchOpen] = useState(false)
@@ -191,7 +238,13 @@ export default function ChatPanel() {
         <span className={`w-2 h-2 rounded-full ${isConnected ? 'bg-kali-green' : 'bg-kali-red'}`} />
         <span className="text-kali-muted">{isConnected ? 'Connected' : 'Disconnected'}</span>
         {isAgentRunning && (
-          <span className="text-kali-yellow animate-pulse ml-2">Agent running…</span>
+          <button
+            onClick={cancelAgent}
+            className="ml-2 flex items-center gap-1 px-2 py-0.5 bg-kali-red/20 border border-kali-red/50 text-kali-red rounded text-xs hover:bg-kali-red/30 transition-colors"
+            title="Stop agent"
+          >
+            ■ Stop
+          </button>
         )}
         <button
           onClick={() => { setSearchOpen((x) => { if (!x) setTimeout(() => searchRef.current?.focus(), 50); return !x }); setSearchQuery('') }}
@@ -228,9 +281,12 @@ export default function ChatPanel() {
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-4">
-        {visibleMessages.length === 0 && (
+        {visibleMessages.length === 0 && !searchQuery && (
+          <QuickActions onSend={(prompt) => { sendMessage(prompt) }} disabled={!isConnected || isAgentRunning} />
+        )}
+        {visibleMessages.length === 0 && searchQuery && (
           <div className="text-center text-kali-muted text-xs mt-8">
-            <p>{searchQuery ? 'No messages match your search.' : 'Session started. Configure your target and begin.'}</p>
+            <p>No messages match your search.</p>
           </div>
         )}
         {visibleMessages.map((msg, i) => (

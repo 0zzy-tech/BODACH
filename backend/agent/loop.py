@@ -1,4 +1,5 @@
 from __future__ import annotations
+import asyncio
 import json
 import logging
 import re
@@ -8,14 +9,16 @@ from typing import Any, Awaitable, Callable
 from backend.config import settings
 from backend.agent.ollama_client import ollama_client
 from backend.agent.tool_registry import tool_registry
-from backend.sessions.models import Session, Message, Finding, FindingSeverity
+from backend.agent.tools.executor import cancel_event_var
+from backend.sessions.models import Session, Message, Finding, FindingSeverity, Credential, CredentialType
 
 logger = logging.getLogger(__name__)
 
 WsSend = Callable[[dict[str, Any]], Awaitable[None]]
 
-# Marker pattern the AI is instructed to embed when it discovers a finding
+# Marker patterns the AI is instructed to embed
 _FINDING_RE = re.compile(r'%%FINDING%%\s*(\{.*?\})\s*%%END%%', re.DOTALL)
+_CREDENTIAL_RE = re.compile(r'%%CREDENTIAL%%\s*(\{.*?\})\s*%%END%%', re.DOTALL)
 
 
 def _extract_findings(content: str) -> tuple[str, list[dict]]:
@@ -29,6 +32,18 @@ def _extract_findings(content: str) -> tuple[str, list[dict]]:
             pass
     clean = _FINDING_RE.sub('', content).strip()
     return clean, findings
+
+
+def _extract_credentials(content: str) -> tuple[str, list[dict]]:
+    """Parse %%CREDENTIAL%%{...}%%END%% blocks from assistant content."""
+    creds: list[dict] = []
+    for m in _CREDENTIAL_RE.finditer(content):
+        try:
+            creds.append(json.loads(m.group(1)))
+        except json.JSONDecodeError:
+            pass
+    clean = _CREDENTIAL_RE.sub('', content).strip()
+    return clean, creds
 
 
 def _build_system_prompt(session: Session) -> str:
@@ -64,6 +79,12 @@ Whenever you identify a vulnerability, misconfiguration, exposed credential, or 
 %%FINDING%%{{"title":"<short title>","severity":"<critical|high|medium|low|info>","description":"<what was found>","evidence":"<relevant output or proof>","recommendation":"<how to fix>"}}%%END%%
 
 Emit one marker per distinct finding. These are automatically captured into the Findings tracker — do not skip them. Always emit findings for: open ports with vulnerable/interesting services, discovered credentials, SQL/command injection, XSS, default passwords, unpatched CVEs, exposed admin panels, weak configurations, and any exploitable condition.
+
+AUTO-CREDENTIAL REPORTING:
+Whenever you discover or confirm a working credential (password, hash, SSH key, API key, token), emit a credential marker:
+%%CREDENTIAL%%{{"username":"<user>","secret":"<password or hash>","cred_type":"<plaintext|hash|ssh_key|api_key|token|other>","service":"<e.g. SSH, SMB, WordPress>","host":"<ip or hostname>"}}%%END%%
+
+These are automatically saved to the Credential Vault. Emit one per credential found.
 
 Begin by understanding the user's objective. Plan your approach before running tools."""
 
@@ -104,12 +125,16 @@ async def run_agent_loop(
     session: Session,
     user_message: str,
     ws_send: WsSend,
+    cancel_event: asyncio.Event | None = None,
 ) -> str:
     """
     Core agentic loop. Appends user message to session, runs Ollama→tool→Ollama
     cycles until a final text response is produced, then returns it.
     """
     from backend.sessions.manager import session_manager
+
+    if cancel_event is None:
+        cancel_event = asyncio.Event()
 
     # Record user message
     user_msg = Message(role="user", content=user_message)
@@ -120,6 +145,11 @@ async def run_agent_loop(
     final_content = ""
 
     while iteration < settings.max_agent_iterations:
+        # Check cancellation before each Ollama call
+        if cancel_event.is_set():
+            await ws_send({"type": "cancelled"})
+            return "[Agent cancelled by user]"
+
         iteration += 1
         messages = _build_messages(session)
 
@@ -135,15 +165,15 @@ async def run_agent_loop(
         content = response_msg.get("content", "") or ""
 
         if not tool_calls:
-            # Final text response — extract findings, then stream back
+            # Final text response — extract findings + credentials, then stream back
             if content:
                 clean_content, raw_findings = _extract_findings(content)
+                clean_content, raw_creds = _extract_credentials(clean_content)
 
-                # Auto-create any findings the AI embedded in its response
+                # Auto-create findings
                 for fd in raw_findings:
                     try:
                         severity_val = fd.get("severity", "info").lower()
-                        # Validate severity against enum values
                         if severity_val not in [s.value for s in FindingSeverity]:
                             severity_val = "info"
                         finding = Finding(
@@ -161,6 +191,28 @@ async def run_agent_loop(
                         logger.info(f"Auto-finding added: [{finding.severity}] {finding.title}")
                     except Exception as e:
                         logger.warning(f"Failed to save auto-finding: {e}")
+
+                # Auto-create credentials
+                for cd in raw_creds:
+                    try:
+                        cred_type_val = cd.get("cred_type", "plaintext").lower()
+                        if cred_type_val not in [c.value for c in CredentialType]:
+                            cred_type_val = "other"
+                        credential = Credential(
+                            username=cd.get("username", ""),
+                            secret=cd.get("secret", ""),
+                            cred_type=CredentialType(cred_type_val),
+                            service=cd.get("service", ""),
+                            host=cd.get("host", ""),
+                        )
+                        await session_manager.add_credential(session.id, credential)
+                        await ws_send({
+                            "type": "credential_added",
+                            "credential": json.loads(credential.model_dump_json()),
+                        })
+                        logger.info(f"Auto-credential added: {credential.username}@{credential.host}")
+                    except Exception as e:
+                        logger.warning(f"Failed to save auto-credential: {e}")
 
                 # Record assistant message with markers stripped
                 asst_msg = Message(role="assistant", content=clean_content)
@@ -188,6 +240,11 @@ async def run_agent_loop(
 
         # Execute each tool call
         for tc in tool_calls:
+            # Check cancellation before each tool
+            if cancel_event.is_set():
+                await ws_send({"type": "cancelled"})
+                return "[Agent cancelled by user]"
+
             fn = tc.get("function", {})
             tool_name = fn.get("name", "")
             raw_args = fn.get("arguments", {})
@@ -212,7 +269,11 @@ async def run_agent_loop(
                     await ws_send({"type": "tool_output", "line": line})
 
                 try:
-                    result = await tool.run(on_output=_on_output, **raw_args)
+                    token = cancel_event_var.set(cancel_event)
+                    try:
+                        result = await tool.run(on_output=_on_output, **raw_args)
+                    finally:
+                        cancel_event_var.reset(token)
                     await ws_send({"type": "tool_end", "tool": tool_name, "exit_code": result.exit_code})
                     tool_result_content = result.output
                 except Exception as e:

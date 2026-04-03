@@ -37,4 +37,15 @@ export const apiClient = {
   // Reports & exports (return raw Response for blob download)
   downloadReport: (id, format) => fetch(`${BASE}/sessions/${id}/report?format=${format}`),
   exportSession: (id, format) => fetch(`${BASE}/sessions/${id}/export?format=${format}`),
+
+  // Credentials
+  getCredentials: (id) => req('GET', `/sessions/${id}/credentials`),
+  addCredential: (id, data) => req('POST', `/sessions/${id}/credentials`, data),
+  updateCredential: (id, cid, data) => req('PUT', `/sessions/${id}/credentials/${cid}`, data),
+  deleteCredential: (id, cid) => req('DELETE', `/sessions/${id}/credentials/${cid}`),
+
+  // Loot
+  getLoot: () => req('GET', '/loot'),
+  deleteLoot: (name) => req('DELETE', `/loot/${encodeURIComponent(name)}`),
+  downloadLoot: (name) => fetch(`${BASE}/loot/${encodeURIComponent(name)}`),
 }

@@ -25,6 +25,9 @@ const useAppStore = create((set, get) => ({
   // Findings
   findings: [],
 
+  // Credentials
+  credentials: [],
+
   // Theme
   theme: localStorage.getItem('theme') || 'dark',
 
@@ -58,6 +61,7 @@ const useAppStore = create((set, get) => ({
         activeSession: session,
         messages: [],
         findings: [],
+        credentials: [],
         terminalLines: [],
         isConnected: false,
         isAgentRunning: false,
@@ -89,13 +93,14 @@ const useAppStore = create((set, get) => ({
   setActiveSession: async (id) => {
     if (get().activeSessionId === id) return
     wsManager.disconnect()
-    set({ activeSessionId: id, activeSession: null, messages: [], findings: [], terminalLines: [], isConnected: false, isAgentRunning: false })
+    set({ activeSessionId: id, activeSession: null, messages: [], findings: [], credentials: [], terminalLines: [], isConnected: false, isAgentRunning: false })
     try {
-      const [session, findings] = await Promise.all([
+      const [session, findings, credentials] = await Promise.all([
         apiClient.getSession(id),
         apiClient.getFindings(id),
+        apiClient.getCredentials(id),
       ])
-      set({ activeSession: session, findings })
+      set({ activeSession: session, findings, credentials })
       wsManager.connect(id)
     } catch (e) {
       console.error('Failed to load session', e)
@@ -187,6 +192,10 @@ const useAppStore = create((set, get) => ({
     }))
   },
 
+  cancelAgent: () => {
+    wsManager.send({ type: 'cancel' })
+  },
+
   // ── WebSocket event handlers (called by wsManager) ───────────────
 
   onConnected: () => {
@@ -257,8 +266,56 @@ const useAppStore = create((set, get) => ({
     set((s) => ({ findings: [...s.findings, finding] }))
   },
 
+  onCredentialAdded: (credential) => {
+    set((s) => ({ credentials: [...s.credentials, credential] }))
+  },
+
+  onCancelled: () => {
+    set((s) => ({
+      messages: [...s.messages, { role: 'error', content: 'Agent stopped by user.', timestamp: new Date().toISOString() }],
+      isAgentRunning: false,
+    }))
+  },
+
   onDisconnected: () => {
     set({ isConnected: false, isAgentRunning: false })
+  },
+
+  // ── Credential actions ───────────────────────────────────────────────
+
+  addCredential: async (data) => {
+    const id = get().activeSessionId
+    if (!id) return
+    try {
+      const credential = await apiClient.addCredential(id, data)
+      set((s) => ({ credentials: [...s.credentials, credential] }))
+    } catch (e) {
+      console.error('Failed to add credential', e)
+      throw e
+    }
+  },
+
+  updateCredential: async (credId, data) => {
+    const id = get().activeSessionId
+    if (!id) return
+    try {
+      const updated = await apiClient.updateCredential(id, credId, data)
+      set((s) => ({ credentials: s.credentials.map((c) => (c.id === credId ? updated : c)) }))
+    } catch (e) {
+      console.error('Failed to update credential', e)
+      throw e
+    }
+  },
+
+  deleteCredential: async (credId) => {
+    const id = get().activeSessionId
+    if (!id) return
+    try {
+      await apiClient.deleteCredential(id, credId)
+      set((s) => ({ credentials: s.credentials.filter((c) => c.id !== credId) }))
+    } catch (e) {
+      console.error('Failed to delete credential', e)
+    }
   },
 
   // ── Ollama config ────────────────────────────────────────────────
