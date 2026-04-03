@@ -11,19 +11,51 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y --no-install-recommends \
     # Core utilities
     curl wget git vim procps \
-    # Pentesting tools
+    # Pentesting tools — scanning & enumeration
     nmap \
+    masscan \
     gobuster \
+    ffuf \
+    feroxbuster \
     nikto \
-    sqlmap \
-    hydra \
+    nuclei \
     whatweb \
     dirb \
     wfuzz \
+    sslscan \
+    # Web & SQL
+    sqlmap \
+    # Password attacks
+    hydra \
+    john \
+    hashcat \
+    # SMB / Windows / AD
     enum4linux \
     smbclient \
+    netexec \
+    impacket-scripts \
+    evil-winrm \
+    # Exploitation
     metasploit-framework \
+    exploitdb \
+    # DNS & OSINT
+    dnsrecon \
+    theharvester \
+    amass \
+    # Network utilities
+    tcpdump \
+    netdiscover \
+    arp-scan \
+    hping3 \
+    fping \
+    socat \
+    nbtscan \
+    onesixtyone \
+    snmp \
+    ldap-utils \
+    # Wordlists
     wordlists \
+    seclists \
     # Python
     python3 \
     python3-pip \

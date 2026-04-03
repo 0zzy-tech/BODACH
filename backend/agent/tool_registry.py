@@ -13,6 +13,16 @@ from backend.agent.tools.dirb import DirbTool
 from backend.agent.tools.wfuzz import WfuzzTool
 from backend.agent.tools.enum4linux import Enum4linuxTool
 from backend.agent.tools.smbclient_tool import SmbclientTool
+from backend.agent.tools.ffuf import FfufTool
+from backend.agent.tools.masscan import MasscanTool
+from backend.agent.tools.searchsploit import SearchsploitTool
+from backend.agent.tools.dnsrecon import DnsreconTool
+from backend.agent.tools.theharvester import TheHarvesterTool
+from backend.agent.tools.nuclei import NucleiTool
+from backend.agent.tools.netexec import NetexecTool
+from backend.agent.tools.john import JohnTool
+from backend.agent.tools.sslscan import SslscanTool
+from backend.agent.tools.impacket_secretsdump import ImpacketSecretsdumpTool
 
 
 class ToolRegistry:
@@ -29,6 +39,16 @@ class ToolRegistry:
             WfuzzTool(),
             Enum4linuxTool(),
             SmbclientTool(),
+            FfufTool(),
+            MasscanTool(),
+            SearchsploitTool(),
+            DnsreconTool(),
+            TheHarvesterTool(),
+            NucleiTool(),
+            NetexecTool(),
+            JohnTool(),
+            SslscanTool(),
+            ImpacketSecretsdumpTool(),
         ]
         self._registry: dict[str, BaseTool] = {t.name: t for t in _tools}
 
