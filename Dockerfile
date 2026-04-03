@@ -1,4 +1,4 @@
-# Agentic Pentesting AI - Kali Linux container
+# Pentest Agent 2.0 — Kali Linux container
 FROM kalilinux/kali-rolling
 
 LABEL maintainer="Ozzytech"
@@ -7,82 +7,53 @@ LABEL description="Pentest Agent 2.0 — AI-driven red team assistant powered by
 # Avoid interactive prompts during package install
 ENV DEBIAN_FRONTEND=noninteractive
 
-# ── System packages ────────────────────────────────────────────────────────────
+# ── Layer 1: System utilities & build deps ─────────────────────────────────────
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    # Core utilities
     curl wget git vim procps \
-    # Pentesting tools — scanning & enumeration
-    nmap \
-    masscan \
-    gobuster \
-    ffuf \
-    feroxbuster \
-    nikto \
-    nuclei \
-    whatweb \
-    dirb \
-    wfuzz \
-    sslscan \
-    # Web & SQL
-    sqlmap \
-    # Password attacks
-    hydra \
-    medusa \
-    john \
-    hashcat \
-    # SMB / Windows / AD
-    enum4linux \
-    smbclient \
-    netexec \
-    impacket-scripts \
-    evil-winrm \
-    kerbrute \
-    # Exploitation & payload generation
+    python3 python3-pip python3-venv \
+    nodejs npm \
+    postgresql postgresql-client \
+    gcc python3-dev libssl-dev libffi-dev \
+    libpango-1.0-0 libcairo2 libgdk-pixbuf-2.0-0 shared-mime-info \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# ── Layer 2: Core pentesting tools (stable Kali packages) ─────────────────────
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    nmap masscan gobuster ffuf nikto sqlmap whatweb dirb wfuzz sslscan \
+    hydra john hashcat medusa \
+    enum4linux smbclient ldap-utils nbtscan \
     metasploit-framework \
-    exploitdb \
-    commix \
-    # Web CMS scanners
-    wpscan \
-    # DNS & OSINT
-    dnsrecon \
-    theharvester \
-    amass \
-    subfinder \
-    # Network utilities
-    tcpdump \
-    netdiscover \
-    arp-scan \
-    hping3 \
-    fping \
-    socat \
-    nbtscan \
-    onesixtyone \
-    snmp \
-    snmp-check \
-    ldap-utils \
-    # Wordlists
+    dnsrecon theharvester \
+    tcpdump netdiscover arp-scan hping3 fping socat \
+    onesixtyone snmp \
     wordlists \
-    seclists \
-    # Python
-    python3 \
-    python3-pip \
-    python3-venv \
-    # Node.js for frontend build
-    nodejs \
-    npm \
-    # PostgreSQL for Metasploit
-    postgresql \
-    postgresql-client \
-    # Build dependencies for Python packages
-    gcc \
-    python3-dev \
-    libssl-dev \
-    libffi-dev \
-    # WeasyPrint system dependencies (for PDF report generation)
-    libpango-1.0-0 \
-    libcairo2 \
-    libgdk-pixbuf-2.0-0 \
-    shared-mime-info \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# ── Layer 3: Extended tools (best-effort — skip any unavailable packages) ──────
+# Package names can vary across Kali rolling snapshots; failures are non-fatal
+RUN apt-get update && \
+    for pkg in \
+        feroxbuster \
+        nuclei \
+        netexec \
+        crackmapexec \
+        impacket-scripts \
+        evil-winrm \
+        kerbrute \
+        exploitdb \
+        commix \
+        wpscan \
+        amass \
+        subfinder \
+        snmp-check \
+        seclists \
+    ; do \
+        apt-get install -y --no-install-recommends "$pkg" \
+            && echo "[+] Installed $pkg" \
+            || echo "[!] $pkg not available in current repos, skipping"; \
+    done \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
