@@ -1,0 +1,35 @@
+services:
+  pentest-ai:
+    build: .
+    image: pentest-ai:latest
+    container_name: pentest-ai
+    ports:
+      - "8000:8000"
+    environment:
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-https://ollama.com}
+      - OLLAMA_API_KEY=${OLLAMA_API_KEY}
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-llama3.1}
+      - SESSION_DB_PATH=/data/sessions.db
+      - LOOT_DIR=/app/loot
+      - MAX_TOOL_RUNTIME=${MAX_TOOL_RUNTIME:-300}
+      - SESSION_TTL=${SESSION_TTL:-3600}
+    volumes:
+      - pentest-data:/data
+      - pentest-loot:/app/loot
+    # Required for nmap SYN scanning and raw sockets
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/config/ollama"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+volumes:
+  pentest-data:
+    driver: local
+  pentest-loot:
+    driver: local
