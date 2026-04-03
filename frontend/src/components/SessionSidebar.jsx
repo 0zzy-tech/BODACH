@@ -3,11 +3,43 @@ import { useAppStore } from '../store/appStore'
 import OllamaConfig from './OllamaConfig'
 import ReportModal from './ReportModal'
 
+function AboutModal({ onClose }) {
+  return (
+    <div
+      className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
+      onClick={onClose}
+    >
+      <div
+        className="bg-kali-surface border border-kali-border rounded-lg w-full max-w-sm p-6 text-center space-y-4"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <p className="text-4xl">⚔</p>
+        <div>
+          <h2 className="text-kali-text font-bold text-lg tracking-wider">PENTEST AI</h2>
+          <p className="text-kali-muted text-xs mt-1">Agentic AI-powered red team assistant</p>
+        </div>
+        <div className="border-t border-kali-border pt-4 space-y-1">
+          <p className="text-kali-muted text-xs">Made with Claude &amp; Beer by</p>
+          <p className="text-kali-text font-semibold text-sm">Martyn Oswald</p>
+          <p className="text-kali-accent text-xs font-medium">Ozzytech</p>
+        </div>
+        <button
+          onClick={onClose}
+          className="mt-2 px-4 py-1.5 border border-kali-border rounded text-kali-muted hover:text-kali-text text-xs transition-colors"
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  )
+}
+
 export default function SessionSidebar() {
   const { sessions, activeSessionId, createSession, deleteSession, setActiveSession, renameSession } = useAppStore()
   const [editingId, setEditingId] = useState(null)
   const [editName, setEditName] = useState('')
   const [reportSessionId, setReportSessionId] = useState(null)
+  const [showAbout, setShowAbout] = useState(false)
 
   const handleCreate = () => createSession()
 
@@ -110,10 +142,21 @@ export default function SessionSidebar() {
       {/* Ollama config at bottom */}
       <OllamaConfig />
 
-      {/* Report/Export modal */}
+      {/* About footer */}
+      <div className="border-t border-kali-border px-4 py-2 flex justify-center">
+        <button
+          onClick={() => setShowAbout(true)}
+          className="text-kali-muted hover:text-kali-accent text-xs transition-colors"
+        >
+          About
+        </button>
+      </div>
+
+      {/* Modals */}
       {reportSessionId && (
         <ReportModal sessionId={reportSessionId} onClose={() => setReportSessionId(null)} />
       )}
+      {showAbout && <AboutModal onClose={() => setShowAbout(false)} />}
     </aside>
   )
 }
