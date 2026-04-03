@@ -41,10 +41,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libffi-dev \
     # WeasyPrint system dependencies (for PDF report generation)
     libpango-1.0-0 \
-    libpangocairo-1.0-0 \
     libcairo2 \
-    libgdk-pixbuf2.0-0 \
-    libffi-dev \
+    libgdk-pixbuf-2.0-0 \
     shared-mime-info \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
