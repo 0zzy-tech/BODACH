@@ -27,6 +27,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     sqlmap \
     # Password attacks
     hydra \
+    medusa \
     john \
     hashcat \
     # SMB / Windows / AD
@@ -35,13 +36,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     netexec \
     impacket-scripts \
     evil-winrm \
-    # Exploitation
+    kerbrute \
+    # Exploitation & payload generation
     metasploit-framework \
     exploitdb \
+    commix \
+    # Web CMS scanners
+    wpscan \
     # DNS & OSINT
     dnsrecon \
     theharvester \
     amass \
+    subfinder \
     # Network utilities
     tcpdump \
     netdiscover \
@@ -52,6 +58,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     nbtscan \
     onesixtyone \
     snmp \
+    snmp-check \
     ldap-utils \
     # Wordlists
     wordlists \

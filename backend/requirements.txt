@@ -8,3 +8,4 @@ aiosqlite>=0.20.0
 python-multipart>=0.0.9
 weasyprint>=60.0
 mistune>=3.0.0
+arjun>=2.2.0

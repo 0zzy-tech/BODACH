@@ -23,6 +23,18 @@ from backend.agent.tools.netexec import NetexecTool
 from backend.agent.tools.john import JohnTool
 from backend.agent.tools.sslscan import SslscanTool
 from backend.agent.tools.impacket_secretsdump import ImpacketSecretsdumpTool
+from backend.agent.tools.feroxbuster import FeroxbusterTool
+from backend.agent.tools.wpscan import WpscanTool
+from backend.agent.tools.kerbrute import KerberuteTool
+from backend.agent.tools.impacket_getnpusers import ImpacketGetNPUsersTool
+from backend.agent.tools.impacket_getuserspns import ImpacketGetUserSPNsTool
+from backend.agent.tools.hashcat import HashcatTool
+from backend.agent.tools.snmpcheck import SnmpCheckTool
+from backend.agent.tools.commix import CommixTool
+from backend.agent.tools.subfinder import SubfinderTool
+from backend.agent.tools.medusa import MedusaTool
+from backend.agent.tools.msfvenom import MsfvenomTool
+from backend.agent.tools.arjun import ArjunTool
 
 
 class ToolRegistry:
@@ -49,6 +61,18 @@ class ToolRegistry:
             JohnTool(),
             SslscanTool(),
             ImpacketSecretsdumpTool(),
+            FeroxbusterTool(),
+            WpscanTool(),
+            KerberuteTool(),
+            ImpacketGetNPUsersTool(),
+            ImpacketGetUserSPNsTool(),
+            HashcatTool(),
+            SnmpCheckTool(),
+            CommixTool(),
+            SubfinderTool(),
+            MedusaTool(),
+            MsfvenomTool(),
+            ArjunTool(),
         ]
         self._registry: dict[str, BaseTool] = {t.name: t for t in _tools}
 
