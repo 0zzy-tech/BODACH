@@ -1,8 +1,8 @@
 # Agentic Pentesting AI - Kali Linux container
 FROM kalilinux/kali-rolling
 
-LABEL maintainer="PenTest AI"
-LABEL description="AI-driven red team assistant powered by Ollama"
+LABEL maintainer="Ozzytech"
+LABEL description="Pentest Agent 2.0 — AI-driven red team assistant powered by Ollama"
 
 # Avoid interactive prompts during package install
 ENV DEBIAN_FRONTEND=noninteractive

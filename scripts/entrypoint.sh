@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-echo "[*] Starting PenTest AI container..."
+echo "[*] Starting Pentest Agent 2.0 container..."
 
 # Start PostgreSQL for Metasploit
 echo "[*] Starting PostgreSQL..."
@@ -15,7 +15,7 @@ msfdb init 2>/dev/null || msfdb reinit 2>/dev/null || true
 # Ensure loot directory exists
 mkdir -p /app/loot /data
 
-echo "[*] Starting PenTest AI server on :8000..."
+echo "[*] Starting Pentest Agent 2.0 server on :8000..."
 exec uvicorn backend.main:app \
     --host 0.0.0.0 \
     --port 8000 \

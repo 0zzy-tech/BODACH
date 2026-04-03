@@ -67,7 +67,7 @@ async def export_session(
         )
     else:
         lines: list[str] = [
-            "PenTest AI — Session Export",
+            "Pentest Agent 2.0 — Session Export",
             f"Session: {session.name}",
         ]
         target = session.target_config

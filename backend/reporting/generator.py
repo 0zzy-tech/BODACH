@@ -13,7 +13,7 @@ def generate_markdown(session: Session) -> str:
     created = session.created_at.strftime("%Y-%m-%d %H:%M UTC")
 
     lines: list[str] = [
-        f"# PenTest AI Report — {session.name}",
+        f"# Pentest Agent 2.0 Report — {session.name}",
         "",
         f"**Date:** {created}  ",
         f"**Target:** {target_str}  ",
@@ -100,7 +100,7 @@ def generate_html(session: Session) -> str:
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PenTest AI Report — {session.name}</title>
+<title>Pentest Agent 2.0 Report — {session.name}</title>
 <style>
   @media print {{ body {{ background: #fff; color: #000; }} a {{ color: #000; }} }}
   * {{ box-sizing: border-box; margin: 0; padding: 0; }}
