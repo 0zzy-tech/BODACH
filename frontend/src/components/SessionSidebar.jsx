@@ -21,7 +21,7 @@ function AboutModal({ onClose }) {
         </div>
         <div className="border-t border-kali-border pt-4 space-y-1">
           <p className="text-kali-muted text-xs">Made with Claude &amp; Beer by</p>
-          <p className="text-kali-text font-semibold text-sm">Martyn Oswald</p>
+          <p className="text-kali-text font-semibold text-sm">MRO</p>
           <p className="text-kali-accent text-xs font-medium">Ozzytech</p>
         </div>
         <button
