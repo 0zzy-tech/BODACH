@@ -1,17 +1,31 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useAppStore } from './store/appStore'
 import { wsManager } from './api/websocket'
 import SessionSidebar from './components/SessionSidebar'
 import ChatPanel from './components/ChatPanel'
 import RightPanel from './components/RightPanel'
+import CommandPalette from './components/CommandPalette'
 
 export default function App() {
   const store = useAppStore()
+  const [showPalette, setShowPalette] = useState(false)
 
   // Apply saved theme on mount
   useEffect(() => {
     const saved = localStorage.getItem('theme') || 'dark'
     document.documentElement.classList.toggle('light', saved === 'light')
+  }, [])
+
+  // Global Ctrl+K / Cmd+K shortcut
+  useEffect(() => {
+    const handler = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault()
+        setShowPalette((v) => !v)
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
   }, [])
 
   // Wire wsManager dispatch to store actions
@@ -74,6 +88,7 @@ export default function App() {
       <SessionSidebar />
       <ChatPanel />
       <RightPanel />
+      {showPalette && <CommandPalette onClose={() => setShowPalette(false)} />}
     </div>
   )
 }

@@ -28,6 +28,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     tcpdump netdiscover arp-scan hping3 fping socat \
     onesixtyone snmp \
     wordlists \
+    swaks awscli default-jre ruby \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -37,7 +38,7 @@ RUN apt-get update && \
         feroxbuster nuclei netexec crackmapexec impacket-scripts \
         evil-winrm kerbrute exploitdb commix wpscan amass subfinder \
         snmp-check seclists wafw00f eyewitness joomscan dotdotpwn \
-        testssl.sh golang-go \
+        testssl.sh golang-go trivy \
     ; do \
         apt-get install -y --no-install-recommends "$pkg" \
             && echo "[+] Installed $pkg" \
@@ -61,6 +62,8 @@ RUN which go >/dev/null 2>&1 && \
         "github.com/sensepost/gowitness@latest" \
         "github.com/zricethezav/gitleaks/v8@latest" \
         "github.com/trufflesecurity/trufflehog/v3@latest" \
+        "github.com/Ice3man543/subover@latest" \
+        "github.com/haccer/subjack@latest" \
     ; do \
         go install "$tool" && echo "[+] go install $tool" \
             || echo "[!] Failed: $tool, skipping"; \
@@ -72,6 +75,10 @@ RUN pip3 install --no-cache-dir \
         s3scanner \
         lfimap \
         graphql-cop \
+        bloodhound \
+        prowler \
+        kube-hunter \
+        hosthunter \
     2>/dev/null || true
 
 RUN cd /opt && \
@@ -85,6 +92,8 @@ RUN cd /opt && \
         "https://github.com/m4ll0k/SecretFinder" \
         "https://github.com/r0oth3x49/Oralyzer" \
         "https://github.com/assetnote/kiterunner" \
+        "https://github.com/enjoiz/XXEinjector" \
+        "https://github.com/carlospolop/PEASS-ng" \
     ; do \
         name=$(basename "$repo") && \
         git clone --depth 1 "$repo" "$name" && echo "[+] Cloned $name" \
@@ -95,6 +104,17 @@ RUN cd /opt && \
 RUN for req in /opt/*/requirements.txt; do \
         pip3 install --no-cache-dir -r "$req" 2>/dev/null || true; \
     done
+
+# ── Layer 6: Binary tools ───────────────────────────────────────────────────────
+# websocat (WebSocket testing)
+RUN curl -fsSL "https://github.com/vi/websocat/releases/download/v1.13.0/websocat.x86_64-unknown-linux-musl" \
+        -o /usr/local/bin/websocat && chmod +x /usr/local/bin/websocat \
+    || echo "[!] websocat download failed, skipping"
+
+# ysoserial (Java deserialization)
+RUN curl -fsSL "https://github.com/frohoff/ysoserial/releases/latest/download/ysoserial-all.jar" \
+        -o /opt/ysoserial.jar \
+    || echo "[!] ysoserial download failed, skipping"
 
 # ── Python virtual environment ─────────────────────────────────────────────────
 ENV VENV=/opt/venv

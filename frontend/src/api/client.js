@@ -32,7 +32,11 @@ export const apiClient = {
   getFindings: (id) => req('GET', `/sessions/${id}/findings`),
   addFinding: (id, data) => req('POST', `/sessions/${id}/findings`, data),
   updateFinding: (id, fid, data) => req('PUT', `/sessions/${id}/findings/${fid}`, data),
+  patchFinding: (id, fid, data) => req('PUT', `/sessions/${id}/findings/${fid}`, data),
   deleteFinding: (id, fid) => req('DELETE', `/sessions/${id}/findings/${fid}`),
+
+  // Tool availability
+  getToolAvailability: () => req('GET', '/config/tools/availability'),
 
   // Reports & exports (return raw Response for blob download)
   downloadReport: (id, format) => fetch(`${BASE}/sessions/${id}/report?format=${format}`),

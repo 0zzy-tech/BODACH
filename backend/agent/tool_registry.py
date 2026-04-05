@@ -66,6 +66,20 @@ from backend.agent.tools.graphql_cop import GraphqlCopTool
 from backend.agent.tools.puredns import PurednsTool
 from backend.agent.tools.oralyzer import OralyzerTool
 from backend.agent.tools.secretfinder import SecretfinderTool
+# ── New tools ─────────────────────────────────────────────────────────────────
+from backend.agent.tools.subover import SuboverTool
+from backend.agent.tools.subjack import SubjackTool
+from backend.agent.tools.hosthunter import HosthunterTool
+from backend.agent.tools.websocat import WebsocatTool
+from backend.agent.tools.xxeinjector import XxeinjectorTool
+from backend.agent.tools.swaks import SwaksTool
+from backend.agent.tools.linpeas import LinpeasTool
+from backend.agent.tools.bloodhound_python import BloodhoundPythonTool
+from backend.agent.tools.awscli import AwscliTool
+from backend.agent.tools.prowler import ProwlerTool
+from backend.agent.tools.kubehunter import KubehunterTool
+from backend.agent.tools.trivy import TrivyTool
+from backend.agent.tools.ysoserial import YsoserialTool
 
 
 class ToolRegistry:
@@ -153,6 +167,27 @@ class ToolRegistry:
             HashcatTool(),
             # ── Other ─────────────────────────────────────────────────────────
             SnmpCheckTool(),
+            # ── Subdomain takeover ────────────────────────────────────────────
+            SuboverTool(),
+            SubjackTool(),
+            # ── Host header injection ─────────────────────────────────────────
+            HosthunterTool(),
+            # ── WebSocket testing ─────────────────────────────────────────────
+            WebsocatTool(),
+            # ── XXE & deserialization ─────────────────────────────────────────
+            XxeinjectorTool(),
+            YsoserialTool(),
+            # ── SMTP testing ──────────────────────────────────────────────────
+            SwaksTool(),
+            # ── Privilege escalation ──────────────────────────────────────────
+            LinpeasTool(),
+            # ── Active Directory ──────────────────────────────────────────────
+            BloodhoundPythonTool(),
+            # ── Cloud ─────────────────────────────────────────────────────────
+            AwscliTool(),
+            ProwlerTool(),
+            KubehunterTool(),
+            TrivyTool(),
         ]
         self._registry: dict[str, BaseTool] = {t.name: t for t in _tools}
 

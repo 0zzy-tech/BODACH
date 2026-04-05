@@ -34,6 +34,9 @@ const useAppStore = create((set, get) => ({
   // Session notes
   notes: '',
 
+  // Per-session tab memory: { [sessionId]: tabName }
+  sessionTabs: {},
+
   // Theme
   theme: localStorage.getItem('theme') || 'dark',
 
@@ -96,6 +99,12 @@ const useAppStore = create((set, get) => ({
     } catch (e) {
       console.error('Failed to delete session', e)
     }
+  },
+
+  setActiveSessionTab: (tab) => {
+    const id = get().activeSessionId
+    if (!id) return
+    set((s) => ({ sessionTabs: { ...s.sessionTabs, [id]: tab } }))
   },
 
   setActiveSession: async (id) => {
@@ -172,6 +181,19 @@ const useAppStore = create((set, get) => ({
     } catch (e) {
       console.error('Failed to update finding', e)
       throw e
+    }
+  },
+
+  patchFinding: async (findingId, patch) => {
+    const id = get().activeSessionId
+    if (!id) return
+    const existing = get().findings.find((f) => f.id === findingId)
+    if (!existing) return
+    try {
+      const updated = await apiClient.patchFinding(id, findingId, { ...existing, ...patch })
+      set((s) => ({ findings: s.findings.map((f) => (f.id === findingId ? updated : f)) }))
+    } catch (e) {
+      console.error('Failed to patch finding', e)
     }
   },
 

@@ -22,6 +22,8 @@ class Finding(BaseModel):
     description: str
     evidence: str = ""
     recommendation: str = ""
+    cvss: float | None = None
+    status: str = "open"  # open | in_progress | resolved | risk_accepted
     timestamp: datetime = Field(default_factory=datetime.utcnow)
 
 

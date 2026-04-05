@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import ReactMarkdown from 'react-markdown'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
@@ -40,6 +40,71 @@ function ToolBlock({ msg }) {
   )
 }
 
+function AssistantMessage({ msg, searchQuery = '' }) {
+  const [feedback, setFeedback] = useState(null) // null | 'up' | 'down'
+
+  const handleFeedback = (val) => {
+    setFeedback((prev) => (prev === val ? null : val))
+    console.debug('[Bodach feedback]', { role: 'assistant', content: msg.content?.slice(0, 80), feedback: val })
+  }
+
+  return (
+    <div className="mb-3">
+      <div className="flex items-center gap-2 mb-1">
+        <span className="text-kali-red text-sm">⚔</span>
+        <span className="text-kali-muted text-xs">AI Agent</span>
+        {msg.role === 'assistant_streaming' && (
+          <span className="text-kali-yellow text-xs animate-pulse">▋</span>
+        )}
+        {msg.role === 'assistant' && (
+          <div className="ml-auto flex gap-1">
+            <button
+              onClick={() => handleFeedback('up')}
+              title="Good response"
+              className={`text-xs px-1 py-0.5 rounded transition-colors ${feedback === 'up' ? 'text-green-400' : 'text-kali-muted hover:text-green-400'}`}
+            >
+              👍
+            </button>
+            <button
+              onClick={() => handleFeedback('down')}
+              title="Poor response"
+              className={`text-xs px-1 py-0.5 rounded transition-colors ${feedback === 'down' ? 'text-red-400' : 'text-kali-muted hover:text-red-400'}`}
+            >
+              👎
+            </button>
+          </div>
+        )}
+      </div>
+      <div className="prose prose-invert prose-sm max-w-none text-kali-text text-xs leading-relaxed">
+        <ReactMarkdown
+          components={{
+            code({ node, inline, className, children, ...props }) {
+              const match = /language-(\w+)/.exec(className || '')
+              return !inline && match ? (
+                <SyntaxHighlighter
+                  style={vscDarkPlus}
+                  language={match[1]}
+                  PreTag="div"
+                  className="text-xs rounded"
+                  {...props}
+                >
+                  {String(children).replace(/\n$/, '')}
+                </SyntaxHighlighter>
+              ) : (
+                <code className="bg-kali-border px-1 rounded text-kali-accent" {...props}>
+                  {children}
+                </code>
+              )
+            },
+          }}
+        >
+          {msg.content}
+        </ReactMarkdown>
+      </div>
+    </div>
+  )
+}
+
 function Message({ msg, searchQuery = '' }) {
   if (msg.role === 'user') {
     return (
@@ -53,41 +118,7 @@ function Message({ msg, searchQuery = '' }) {
 
   if (msg.role === 'assistant' || msg.role === 'assistant_streaming') {
     return (
-      <div className="mb-3">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="text-kali-red text-sm">⚔</span>
-          <span className="text-kali-muted text-xs">AI Agent</span>
-          {msg.role === 'assistant_streaming' && (
-            <span className="text-kali-yellow text-xs animate-pulse">▋</span>
-          )}
-        </div>
-        <div className="prose prose-invert prose-sm max-w-none text-kali-text text-xs leading-relaxed">
-          <ReactMarkdown
-            components={{
-              code({ node, inline, className, children, ...props }) {
-                const match = /language-(\w+)/.exec(className || '')
-                return !inline && match ? (
-                  <SyntaxHighlighter
-                    style={vscDarkPlus}
-                    language={match[1]}
-                    PreTag="div"
-                    className="text-xs rounded"
-                    {...props}
-                  >
-                    {String(children).replace(/\n$/, '')}
-                  </SyntaxHighlighter>
-                ) : (
-                  <code className="bg-kali-border px-1 rounded text-kali-accent" {...props}>
-                    {children}
-                  </code>
-                )
-              },
-            }}
-          >
-            {msg.content}
-          </ReactMarkdown>
-        </div>
-      </div>
+      <AssistantMessage msg={msg} searchQuery={searchQuery} />
     )
   }
 
@@ -300,6 +331,7 @@ export default function ChatPanel() {
         <div className="flex gap-2">
           <textarea
             ref={textareaRef}
+            id="chat-input"
             className="flex-1 bg-kali-surface border border-kali-border rounded-lg px-3 py-2 text-xs text-kali-text outline-none focus:border-kali-accent resize-none placeholder-kali-muted"
             rows={3}
             placeholder={

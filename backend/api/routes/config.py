@@ -105,3 +105,54 @@ async def test_ollama_connection(req: OllamaTestRequest) -> OllamaTestResponse:
 async def list_tools() -> dict:
     from backend.agent.tool_registry import tool_registry
     return {"tools": tool_registry.list_names()}
+
+
+@router.get("/tools/availability")
+async def tool_availability() -> dict:
+    """Check which tool binaries are actually installed in the container."""
+    import shutil
+    from backend.agent.tool_registry import tool_registry
+
+    # Map tool name → primary binary to check
+    _BINARY_MAP: dict[str, str] = {
+        "run_nmap": "nmap", "run_masscan": "masscan", "run_gobuster": "gobuster",
+        "run_ffuf": "ffuf", "run_nikto": "nikto", "run_sqlmap": "sqlmap",
+        "run_whatweb": "whatweb", "run_dirb": "dirb", "run_wfuzz": "wfuzz",
+        "run_enum4linux": "enum4linux", "run_smbclient": "smbclient",
+        "run_feroxbuster": "feroxbuster", "run_wpscan": "wpscan",
+        "run_metasploit": "msfconsole", "run_hydra": "hydra",
+        "run_john": "john", "run_hashcat": "hashcat", "run_medusa": "medusa",
+        "run_msfvenom": "msfvenom", "run_searchsploit": "searchsploit",
+        "run_dnsrecon": "dnsrecon", "run_theharvester": "theHarvester",
+        "run_nuclei": "nuclei", "run_netexec": "netexec",
+        "run_sslscan": "sslscan", "run_impacket_secretsdump": "impacket-secretsdump",
+        "run_impacket_getnpusers": "impacket-GetNPUsers",
+        "run_impacket_getuserspns": "impacket-GetUserSPNs",
+        "run_kerbrute": "kerbrute", "run_snmpcheck": "snmp-check",
+        "run_commix": "commix", "run_subfinder": "subfinder",
+        "run_amass": "amass", "run_wafw00f": "wafw00f",
+        "run_dalfox": "dalfox", "run_httpx": "httpx",
+        "run_katana": "katana", "run_gau": "gau",
+        "run_crlfuzz": "crlfuzz", "run_trufflehog": "trufflehog",
+        "run_gitleaks": "gitleaks", "run_eyewitness": "eyewitness",
+        "run_testssl": "testssl.sh", "run_amass": "amass",
+        "run_dnsx": "dnsx", "run_puredns": "puredns",
+        "run_gowitness": "gowitness", "run_joomscan": "joomscan",
+        "run_subover": "subover", "run_subjack": "subjack",
+        "run_hosthunter": "hosthunter", "run_websocat": "websocat",
+        "run_swaks": "swaks", "run_bloodhound": "bloodhound-python",
+        "run_awscli": "aws", "run_prowler": "prowler",
+        "run_kubehunter": "kube-hunter", "run_trivy": "trivy",
+    }
+
+    availability: dict[str, bool] = {}
+    for tool_name in tool_registry.list_names():
+        binary = _BINARY_MAP.get(tool_name)
+        if binary:
+            availability[tool_name] = shutil.which(binary) is not None
+        else:
+            # Tools using python scripts / java jars — check known paths
+            availability[tool_name] = True  # assume available if no binary mapping
+
+    installed = sum(1 for v in availability.values() if v)
+    return {"availability": availability, "installed": installed, "total": len(availability)}

@@ -77,6 +77,8 @@ class UpdateFindingRequest(BaseModel):
     description: str | None = None
     evidence: str | None = None
     recommendation: str | None = None
+    cvss: float | None = None
+    status: str | None = None
 
 
 @router.get("/{session_id}/findings", response_model=list[Finding])

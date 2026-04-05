@@ -89,7 +89,7 @@ RULES:
 
 AUTO-FINDING REPORTING:
 Whenever you identify a vulnerability, misconfiguration, exposed credential, or security weakness, you MUST emit a structured finding marker inline in your response using this exact format (no spaces inside the markers, valid JSON only):
-%%FINDING%%{{"title":"<short title>","severity":"<critical|high|medium|low|info>","description":"<what was found>","evidence":"<relevant output or proof>","recommendation":"<how to fix>"}}%%END%%
+%%FINDING%%{{"title":"<short title>","severity":"<critical|high|medium|low|info>","description":"<what was found>","evidence":"<relevant output or proof>","recommendation":"<how to fix>","cvss":<CVSS 3.1 base score as float e.g. 7.5, or null if unknown>}}%%END%%
 
 Emit one marker per distinct finding. These are automatically captured into the Findings tracker — do not skip them. Always emit findings for: open ports with vulnerable/interesting services, discovered credentials, SQL/command injection, XSS, default passwords, unpatched CVEs, exposed admin panels, weak configurations, and any exploitable condition.
 
