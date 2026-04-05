@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-> In folklore, **Bodach** is a sinister old man or bogeyman figure from Scottish and Gaelic tradition. It's often used for a spooky, mischievous presence rather than just the plain meaning of "old man."
+> In folklore, **Bodach** is a sinister old man or bogeyman figure from Scottish and Gaelic tradition. It's often used for a spooky, mischievous presence.
 
 An agentic AI-powered penetration testing assistant running inside Kali Linux. Chat with an AI that autonomously selects and runs pentesting tools, streams real-time output, tracks findings automatically, and generates professional reports.
 
