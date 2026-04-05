@@ -4,9 +4,11 @@
 
 > In folklore, **Bodach** is a sinister old man or bogeyman figure from Scottish and Gaelic tradition. It's often used for a spooky, mischievous presence rather than just the plain meaning of "old man."
 
-An agentic AI-powered penetration testing assistant running inside Kali Linux. Chat with an AI that autonomously selects and runs 33 pentesting tools, streams real-time output, tracks findings automatically, and generates professional reports.
+An agentic AI-powered penetration testing assistant running inside Kali Linux. Chat with an AI that autonomously selects and runs pentesting tools, streams real-time output, tracks findings automatically, and generates professional reports.
 
-Made with Claude & Beer by **MRO**
+> **For educational purposes only.** This tool is intended for learning about penetration testing techniques, practising in controlled lab environments, and studying offensive security concepts. Only use it against systems you own or have **explicit written authorisation** to test. Unauthorised use against systems you do not own is illegal.
+
+Made for education purposes by **Ozzytech**
 
 ---
 
@@ -220,4 +222,4 @@ docker buildx build \
 
 ## Licence
 
-MIT — see [LICENSE](LICENSE). Copyright © 2026 MRO.
+MIT — see [LICENSE](LICENSE). Copyright © 2026 Ozzytech.

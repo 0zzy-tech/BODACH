@@ -20,8 +20,8 @@ function AboutModal({ onClose }) {
           <p className="text-kali-accent text-xs font-semibold mt-0.5">Agentic AI red team assistant</p>
         </div>
         <div className="border-t border-kali-border pt-4 space-y-1">
-          <p className="text-kali-muted text-xs">Made with Claude &amp; Beer by</p>
-          <p className="text-kali-text font-semibold text-sm">MRO</p>
+          <p className="text-kali-muted text-xs">Made for education purposes by</p>
+          <p className="text-kali-text font-semibold text-sm">Ozzytech</p>
         </div>
         <button
           onClick={onClose}
