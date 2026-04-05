@@ -55,7 +55,7 @@ function Message({ msg, searchQuery = '' }) {
     return (
       <div className="mb-3">
         <div className="flex items-center gap-2 mb-1">
-          <span className="text-kali-red text-xs">⚔</span>
+          <span className="text-kali-red text-sm">⚔</span>
           <span className="text-kali-muted text-xs">AI Agent</span>
           {msg.role === 'assistant_streaming' && (
             <span className="text-kali-yellow text-xs animate-pulse">▋</span>
@@ -212,9 +212,9 @@ export default function ChatPanel() {
     return (
       <main className="flex-1 flex flex-col items-center justify-center bg-kali-bg">
         <div className="text-center">
-          <p className="text-6xl mb-4">⚔</p>
-          <h1 className="text-kali-text text-xl font-bold mb-2">Pentest Agent 2.0</h1>
-          <p className="text-kali-muted text-sm mb-6">AI-powered red team assistant</p>
+          <p className="text-7xl mb-4">⚔</p>
+          <h1 className="text-kali-text text-xl font-bold mb-2">Bodach</h1>
+          <p className="text-kali-muted text-sm mb-6">The Scottish Boogieman</p>
           <button
             onClick={() => createSession()}
             className="bg-kali-accent hover:bg-blue-400 text-kali-bg font-semibold text-sm py-2 px-6 rounded transition-colors"

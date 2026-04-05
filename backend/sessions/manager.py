@@ -8,7 +8,7 @@ from typing import Optional
 import aiosqlite
 
 from backend.config import settings
-from backend.sessions.models import Session, SessionSummary, TargetConfig, Message, Finding, Credential, _SEVERITY_ORDER
+from backend.sessions.models import Session, SessionSummary, TargetConfig, Message, Finding, Credential, Asset, _SEVERITY_ORDER
 
 logger = logging.getLogger(__name__)
 
@@ -214,6 +214,59 @@ class SessionManager:
         before = len(session.credentials)
         session.credentials = [c for c in session.credentials if c.id != cred_id]
         if len(session.credentials) == before:
+            return False
+        await self._save_to_db(session)
+        return True
+
+    async def update_notes(self, session_id: str, notes: str) -> Optional[Session]:
+        session = self._sessions.get(session_id)
+        if not session:
+            return None
+        session.notes = notes
+        session.last_active = _utcnow()
+        await self._save_to_db(session)
+        return session
+
+    async def add_asset(self, session_id: str, asset: Asset) -> Optional[Asset]:
+        session = self._sessions.get(session_id)
+        if not session:
+            return None
+        # Merge with existing asset for same IP if present
+        for i, a in enumerate(session.assets):
+            if a.ip == asset.ip:
+                merged = a.model_copy(update={
+                    "hostname": asset.hostname or a.hostname,
+                    "os": asset.os or a.os,
+                    "open_ports": sorted(set(a.open_ports + asset.open_ports)),
+                    "services": {**a.services, **asset.services},
+                })
+                session.assets[i] = merged
+                await self._save_to_db(session)
+                return merged
+        session.assets.append(asset)
+        session.last_active = _utcnow()
+        await self._save_to_db(session)
+        return asset
+
+    async def update_asset(self, session_id: str, asset_id: str, data: dict) -> Optional[Asset]:
+        session = self._sessions.get(session_id)
+        if not session:
+            return None
+        for i, a in enumerate(session.assets):
+            if a.id == asset_id:
+                updated = a.model_copy(update=data)
+                session.assets[i] = updated
+                await self._save_to_db(session)
+                return updated
+        return None
+
+    async def delete_asset(self, session_id: str, asset_id: str) -> bool:
+        session = self._sessions.get(session_id)
+        if not session:
+            return False
+        before = len(session.assets)
+        session.assets = [a for a in session.assets if a.id != asset_id]
+        if len(session.assets) == before:
             return False
         await self._save_to_db(session)
         return True

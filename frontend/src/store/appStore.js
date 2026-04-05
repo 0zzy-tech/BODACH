@@ -28,6 +28,12 @@ const useAppStore = create((set, get) => ({
   // Credentials
   credentials: [],
 
+  // Assets
+  assets: [],
+
+  // Session notes
+  notes: '',
+
   // Theme
   theme: localStorage.getItem('theme') || 'dark',
 
@@ -62,6 +68,8 @@ const useAppStore = create((set, get) => ({
         messages: [],
         findings: [],
         credentials: [],
+        assets: [],
+        notes: '',
         terminalLines: [],
         isConnected: false,
         isAgentRunning: false,
@@ -93,14 +101,15 @@ const useAppStore = create((set, get) => ({
   setActiveSession: async (id) => {
     if (get().activeSessionId === id) return
     wsManager.disconnect()
-    set({ activeSessionId: id, activeSession: null, messages: [], findings: [], credentials: [], terminalLines: [], isConnected: false, isAgentRunning: false })
+    set({ activeSessionId: id, activeSession: null, messages: [], findings: [], credentials: [], assets: [], notes: '', terminalLines: [], isConnected: false, isAgentRunning: false })
     try {
-      const [session, findings, credentials] = await Promise.all([
+      const [session, findings, credentials, assets] = await Promise.all([
         apiClient.getSession(id),
         apiClient.getFindings(id),
         apiClient.getCredentials(id),
+        apiClient.getAssets(id),
       ])
-      set({ activeSession: session, findings, credentials })
+      set({ activeSession: session, findings, credentials, assets, notes: session.notes || '' })
       wsManager.connect(id)
     } catch (e) {
       console.error('Failed to load session', e)
@@ -277,8 +286,71 @@ const useAppStore = create((set, get) => ({
     }))
   },
 
+  onAssetAdded: (asset) => {
+    set((s) => {
+      // Replace existing asset with same IP, or append
+      const existing = s.assets.findIndex((a) => a.ip === asset.ip)
+      if (existing >= 0) {
+        const updated = [...s.assets]
+        updated[existing] = asset
+        return { assets: updated }
+      }
+      return { assets: [...s.assets, asset] }
+    })
+  },
+
   onDisconnected: () => {
     set({ isConnected: false, isAgentRunning: false })
+  },
+
+  // ── Notes actions ────────────────────────────────────────────────────
+
+  updateNotes: async (notes) => {
+    const id = get().activeSessionId
+    if (!id) return
+    set({ notes })
+    try {
+      await apiClient.updateNotes(id, notes)
+    } catch (e) {
+      console.error('Failed to save notes', e)
+    }
+  },
+
+  // ── Asset actions ────────────────────────────────────────────────────
+
+  addAsset: async (data) => {
+    const id = get().activeSessionId
+    if (!id) return
+    try {
+      const asset = await apiClient.addAsset(id, data)
+      get().onAssetAdded(asset)
+    } catch (e) {
+      console.error('Failed to add asset', e)
+      throw e
+    }
+  },
+
+  updateAsset: async (assetId, data) => {
+    const id = get().activeSessionId
+    if (!id) return
+    try {
+      const updated = await apiClient.updateAsset(id, assetId, data)
+      set((s) => ({ assets: s.assets.map((a) => (a.id === assetId ? updated : a)) }))
+    } catch (e) {
+      console.error('Failed to update asset', e)
+      throw e
+    }
+  },
+
+  deleteAsset: async (assetId) => {
+    const id = get().activeSessionId
+    if (!id) return
+    try {
+      await apiClient.deleteAsset(id, assetId)
+      set((s) => ({ assets: s.assets.filter((a) => a.id !== assetId) }))
+    } catch (e) {
+      console.error('Failed to delete asset', e)
+    }
   },
 
   // ── Credential actions ───────────────────────────────────────────────

@@ -20,7 +20,7 @@ STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("Starting up Pentest Agent 2.0...")
+    logger.info("Starting up Bodach...")
     await session_manager.startup()
     yield
     logger.info("Shutting down...")
@@ -28,7 +28,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="Pentest Agent 2.0",
+    title="Bodach",
     description="Agentic AI-powered pentesting assistant",
     version="1.0.0",
     lifespan=lifespan,

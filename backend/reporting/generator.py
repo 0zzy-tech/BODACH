@@ -13,7 +13,7 @@ def generate_markdown(session: Session) -> str:
     created = session.created_at.strftime("%Y-%m-%d %H:%M UTC")
 
     lines: list[str] = [
-        f"# Pentest Agent 2.0 Report — {session.name}",
+        f"# Bodach Report — {session.name}",
         "",
         f"**Date:** {created}  ",
         f"**Target:** {target_str}  ",

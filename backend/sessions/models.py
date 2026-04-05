@@ -63,6 +63,17 @@ class Message(BaseModel):
     timestamp: datetime = Field(default_factory=datetime.utcnow)
 
 
+class Asset(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    ip: str
+    hostname: str = ""
+    os: str = ""
+    open_ports: list[int] = []
+    services: dict[str, str] = {}  # port (str) → service name
+    notes: str = ""
+    timestamp: datetime = Field(default_factory=datetime.utcnow)
+
+
 class Session(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     name: str
@@ -71,6 +82,8 @@ class Session(BaseModel):
     messages: list[Message] = []
     findings: list[Finding] = []
     credentials: list[Credential] = []
+    assets: list[Asset] = []
+    notes: str = ""
     target_config: TargetConfig = Field(default_factory=TargetConfig)
 
 

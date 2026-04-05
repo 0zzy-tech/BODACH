@@ -5,7 +5,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from backend.sessions.manager import session_manager
-from backend.sessions.models import Session, SessionSummary, TargetConfig, Finding, FindingSeverity, Credential, CredentialType
+from backend.sessions.models import Session, SessionSummary, TargetConfig, Finding, FindingSeverity, Credential, CredentialType, Asset
 
 router = APIRouter(prefix="/sessions", tags=["sessions"])
 
@@ -166,3 +166,70 @@ async def delete_credential(session_id: str, cred_id: str) -> None:
     ok = await session_manager.delete_credential(session_id, cred_id)
     if not ok:
         raise HTTPException(status_code=404, detail="Credential not found")
+
+
+# ── Notes endpoint ─────────────────────────────────────────────────────────────
+
+class UpdateNotesRequest(BaseModel):
+    notes: str
+
+
+@router.patch("/{session_id}/notes", response_model=Session)
+async def update_notes(session_id: str, req: UpdateNotesRequest) -> Session:
+    session = await session_manager.update_notes(session_id, req.notes)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    return session
+
+
+# ── Assets endpoints ───────────────────────────────────────────────────────────
+
+class CreateAssetRequest(BaseModel):
+    ip: str
+    hostname: str = ""
+    os: str = ""
+    open_ports: list[int] = []
+    services: dict[str, str] = {}
+    notes: str = ""
+
+
+class UpdateAssetRequest(BaseModel):
+    ip: str | None = None
+    hostname: str | None = None
+    os: str | None = None
+    open_ports: list[int] | None = None
+    services: dict[str, str] | None = None
+    notes: str | None = None
+
+
+@router.get("/{session_id}/assets", response_model=list[Asset])
+async def list_assets(session_id: str) -> list[Asset]:
+    session = await session_manager.get(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    return sorted(session.assets, key=lambda a: a.ip)
+
+
+@router.post("/{session_id}/assets", response_model=Asset, status_code=201)
+async def create_asset(session_id: str, req: CreateAssetRequest) -> Asset:
+    asset = Asset(**req.model_dump())
+    result = await session_manager.add_asset(session_id, asset)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+    return result
+
+
+@router.put("/{session_id}/assets/{asset_id}", response_model=Asset)
+async def update_asset(session_id: str, asset_id: str, req: UpdateAssetRequest) -> Asset:
+    data = {k: v for k, v in req.model_dump().items() if v is not None}
+    result = await session_manager.update_asset(session_id, asset_id, data)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Asset not found")
+    return result
+
+
+@router.delete("/{session_id}/assets/{asset_id}", status_code=204)
+async def delete_asset(session_id: str, asset_id: str) -> None:
+    ok = await session_manager.delete_asset(session_id, asset_id)
+    if not ok:
+        raise HTTPException(status_code=404, detail="Asset not found")

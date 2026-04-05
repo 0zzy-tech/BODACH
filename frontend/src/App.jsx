@@ -45,6 +45,9 @@ export default function App() {
         case 'credential_added':
           store.onCredentialAdded(payload.credential)
           break
+        case 'asset_added':
+          store.onAssetAdded(payload.asset)
+          break
         case 'cancelled':
           store.onCancelled()
           break

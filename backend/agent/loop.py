@@ -10,7 +10,7 @@ from backend.config import settings
 from backend.agent.ollama_client import ollama_client
 from backend.agent.tool_registry import tool_registry
 from backend.agent.tools.executor import cancel_event_var
-from backend.sessions.models import Session, Message, Finding, FindingSeverity, Credential, CredentialType
+from backend.sessions.models import Session, Message, Finding, FindingSeverity, Credential, CredentialType, Asset
 
 logger = logging.getLogger(__name__)
 
@@ -19,6 +19,7 @@ WsSend = Callable[[dict[str, Any]], Awaitable[None]]
 # Marker patterns the AI is instructed to embed
 _FINDING_RE = re.compile(r'%%FINDING%%\s*(\{.*?\})\s*%%END%%', re.DOTALL)
 _CREDENTIAL_RE = re.compile(r'%%CREDENTIAL%%\s*(\{.*?\})\s*%%END%%', re.DOTALL)
+_ASSET_RE = re.compile(r'%%ASSET%%\s*(\{.*?\})\s*%%END%%', re.DOTALL)
 
 
 def _extract_findings(content: str) -> tuple[str, list[dict]]:
@@ -44,6 +45,18 @@ def _extract_credentials(content: str) -> tuple[str, list[dict]]:
             pass
     clean = _CREDENTIAL_RE.sub('', content).strip()
     return clean, creds
+
+
+def _extract_assets(content: str) -> tuple[str, list[dict]]:
+    """Parse %%ASSET%%{...}%%END%% blocks from assistant content."""
+    assets: list[dict] = []
+    for m in _ASSET_RE.finditer(content):
+        try:
+            assets.append(json.loads(m.group(1)))
+        except json.JSONDecodeError:
+            pass
+    clean = _ASSET_RE.sub('', content).strip()
+    return clean, assets
 
 
 def _build_system_prompt(session: Session) -> str:
@@ -85,6 +98,12 @@ Whenever you discover or confirm a working credential (password, hash, SSH key, 
 %%CREDENTIAL%%{{"username":"<user>","secret":"<password or hash>","cred_type":"<plaintext|hash|ssh_key|api_key|token|other>","service":"<e.g. SSH, SMB, WordPress>","host":"<ip or hostname>"}}%%END%%
 
 These are automatically saved to the Credential Vault. Emit one per credential found.
+
+AUTO-ASSET REPORTING:
+Whenever you discover a host (from nmap, masscan, or any tool that reveals a live system), emit an asset marker:
+%%ASSET%%{{"ip":"<ip address>","hostname":"<hostname or empty>","os":"<OS guess or empty>","open_ports":[<list of int ports>],"services":{{"<port>":"<service name>"}}}}%%END%%
+
+These are automatically saved to the Asset Inventory. Emit one marker per unique IP discovered. If nmap reveals multiple hosts, emit one marker per host.
 
 Begin by understanding the user's objective. Plan your approach before running tools."""
 
@@ -169,6 +188,7 @@ async def run_agent_loop(
             if content:
                 clean_content, raw_findings = _extract_findings(content)
                 clean_content, raw_creds = _extract_credentials(clean_content)
+                clean_content, raw_assets = _extract_assets(clean_content)
 
                 # Auto-create findings
                 for fd in raw_findings:
@@ -213,6 +233,28 @@ async def run_agent_loop(
                         logger.info(f"Auto-credential added: {credential.username}@{credential.host}")
                     except Exception as e:
                         logger.warning(f"Failed to save auto-credential: {e}")
+
+                # Auto-create assets
+                for ad in raw_assets:
+                    try:
+                        asset = Asset(
+                            ip=ad.get("ip", ""),
+                            hostname=ad.get("hostname", ""),
+                            os=ad.get("os", ""),
+                            open_ports=[int(p) for p in ad.get("open_ports", []) if str(p).isdigit()],
+                            services={str(k): str(v) for k, v in ad.get("services", {}).items()},
+                        )
+                        if not asset.ip:
+                            continue
+                        result_asset = await session_manager.add_asset(session.id, asset)
+                        if result_asset:
+                            await ws_send({
+                                "type": "asset_added",
+                                "asset": json.loads(result_asset.model_dump_json()),
+                            })
+                            logger.info(f"Auto-asset added: {result_asset.ip}")
+                    except Exception as e:
+                        logger.warning(f"Failed to save auto-asset: {e}")
 
                 # Record assistant message with markers stripped
                 asst_msg = Message(role="assistant", content=clean_content)

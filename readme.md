@@ -1,10 +1,10 @@
-# Pentest Agent 2.0
+# Bodach
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 An agentic AI-powered penetration testing assistant running inside Kali Linux. Chat with an AI that autonomously selects and runs 33 pentesting tools, streams real-time output, tracks findings automatically, and generates professional reports.
 
-Made with Claude & Beer by **Martyn Oswald** — Ozzytech
+Made with Claude & Beer by **MRO**
 
 ---
 
@@ -218,4 +218,4 @@ docker buildx build \
 
 ## Licence
 
-MIT — see [LICENSE](LICENSE). Copyright © 2026 Martyn Oswald — Ozzytech.
+MIT — see [LICENSE](LICENSE). Copyright © 2026 MRO.

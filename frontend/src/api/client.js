@@ -48,4 +48,13 @@ export const apiClient = {
   getLoot: () => req('GET', '/loot'),
   deleteLoot: (name) => req('DELETE', `/loot/${encodeURIComponent(name)}`),
   downloadLoot: (name) => fetch(`${BASE}/loot/${encodeURIComponent(name)}`),
+
+  // Notes
+  updateNotes: (id, notes) => req('PATCH', `/sessions/${id}/notes`, { notes }),
+
+  // Assets
+  getAssets: (id) => req('GET', `/sessions/${id}/assets`),
+  addAsset: (id, data) => req('POST', `/sessions/${id}/assets`, data),
+  updateAsset: (id, aid, data) => req('PUT', `/sessions/${id}/assets/${aid}`, data),
+  deleteAsset: (id, aid) => req('DELETE', `/sessions/${id}/assets/${aid}`),
 }

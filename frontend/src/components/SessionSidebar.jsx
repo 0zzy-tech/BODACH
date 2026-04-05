@@ -13,16 +13,15 @@ function AboutModal({ onClose }) {
         className="bg-kali-surface border border-kali-border rounded-lg w-full max-w-sm p-6 text-center space-y-4"
         onClick={(e) => e.stopPropagation()}
       >
-        <p className="text-4xl">⚔</p>
+        <p className="text-6xl">⚔</p>
         <div>
-          <h2 className="text-kali-text font-bold text-lg tracking-wider">PENTEST AGENT 2.0</h2>
-          <p className="text-kali-muted text-xs mt-1">Agentic AI-powered red team assistant</p>
-          <p className="text-kali-accent text-xs font-semibold mt-0.5">v2.0</p>
+          <h2 className="text-kali-text font-bold text-lg tracking-wider">BODACH</h2>
+          <p className="text-kali-muted text-xs mt-1">The Scottish Boogieman</p>
+          <p className="text-kali-accent text-xs font-semibold mt-0.5">Agentic AI red team assistant</p>
         </div>
         <div className="border-t border-kali-border pt-4 space-y-1">
           <p className="text-kali-muted text-xs">Made with Claude &amp; Beer by</p>
           <p className="text-kali-text font-semibold text-sm">MRO</p>
-          <p className="text-kali-accent text-xs font-medium">Ozzytech</p>
         </div>
         <button
           onClick={onClose}
@@ -65,8 +64,8 @@ export default function SessionSidebar() {
       {/* Header */}
       <div className="p-4 border-b border-kali-border">
         <div className="flex items-center gap-2 mb-3">
-          <span className="text-kali-red font-bold text-lg">⚔</span>
-          <span className="text-kali-text font-bold text-sm tracking-wider">PENTEST AGENT 2.0</span>
+          <span className="text-kali-red font-bold text-2xl">⚔</span>
+          <span className="text-kali-text font-bold text-sm tracking-wider">BODACH</span>
         </div>
         <button
           onClick={handleCreate}
