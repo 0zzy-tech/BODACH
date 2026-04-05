@@ -32,30 +32,69 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # ── Layer 3: Extended tools (best-effort — skip any unavailable packages) ──────
-# Package names can vary across Kali rolling snapshots; failures are non-fatal
 RUN apt-get update && \
     for pkg in \
-        feroxbuster \
-        nuclei \
-        netexec \
-        crackmapexec \
-        impacket-scripts \
-        evil-winrm \
-        kerbrute \
-        exploitdb \
-        commix \
-        wpscan \
-        amass \
-        subfinder \
-        snmp-check \
-        seclists \
+        feroxbuster nuclei netexec crackmapexec impacket-scripts \
+        evil-winrm kerbrute exploitdb commix wpscan amass subfinder \
+        snmp-check seclists wafw00f eyewitness joomscan dotdotpwn \
+        testssl.sh golang-go \
     ; do \
         apt-get install -y --no-install-recommends "$pkg" \
             && echo "[+] Installed $pkg" \
-            || echo "[!] $pkg not available in current repos, skipping"; \
+            || echo "[!] $pkg not available, skipping"; \
     done \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
+
+# ── Layer 4: Go-based web tools ────────────────────────────────────────────────
+ENV PATH="$PATH:/root/go/bin"
+RUN which go >/dev/null 2>&1 && \
+    for tool in \
+        "github.com/projectdiscovery/httpx/cmd/httpx@latest" \
+        "github.com/projectdiscovery/katana/cmd/katana@latest" \
+        "github.com/projectdiscovery/dnsx/cmd/dnsx@latest" \
+        "github.com/projectdiscovery/interactsh/cmd/interactsh-client@latest" \
+        "github.com/lc/gau/v2/cmd/gau@latest" \
+        "github.com/hahwul/dalfox/v2@latest" \
+        "github.com/dwisiswant0/crlfuzz/cmd/crlfuzz@latest" \
+        "github.com/d3mondev/puredns/v2@latest" \
+        "github.com/sensepost/gowitness@latest" \
+        "github.com/zricethezav/gitleaks/v8@latest" \
+        "github.com/trufflesecurity/trufflehog/v3@latest" \
+    ; do \
+        go install "$tool" && echo "[+] go install $tool" \
+            || echo "[!] Failed: $tool, skipping"; \
+    done || echo "[!] Go not available, skipping Go tools"
+
+# ── Layer 5: Python/git web tools ──────────────────────────────────────────────
+RUN pip3 install --no-cache-dir \
+        droopescan \
+        s3scanner \
+        lfimap \
+        graphql-cop \
+    2>/dev/null || true
+
+RUN cd /opt && \
+    for repo in \
+        "https://github.com/ticarpi/jwt_tool" \
+        "https://github.com/swisskyrepo/SSRFmap" \
+        "https://github.com/chenjj/CORScanner" \
+        "https://github.com/nicowillis/smuggler" \
+        "https://github.com/epinna/tplmap" \
+        "https://github.com/GerbenJavado/LinkFinder" \
+        "https://github.com/m4ll0k/SecretFinder" \
+        "https://github.com/r0oth3x49/Oralyzer" \
+        "https://github.com/assetnote/kiterunner" \
+    ; do \
+        name=$(basename "$repo") && \
+        git clone --depth 1 "$repo" "$name" && echo "[+] Cloned $name" \
+            || echo "[!] Failed to clone $repo, skipping"; \
+    done
+
+# Install Python deps for cloned tools (best-effort)
+RUN for req in /opt/*/requirements.txt; do \
+        pip3 install --no-cache-dir -r "$req" 2>/dev/null || true; \
+    done
 
 # ── Python virtual environment ─────────────────────────────────────────────────
 ENV VENV=/opt/venv
