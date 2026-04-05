@@ -1,8 +1,8 @@
 services:
-  pentest-ai:
+  bodach:
     build: .
-    image: pentest-ai:latest
-    container_name: pentest-ai
+    image: bodach:latest
+    container_name: BODACH
     ports:
       - "8000:8000"
     environment:
@@ -14,8 +14,8 @@ services:
       - MAX_TOOL_RUNTIME=${MAX_TOOL_RUNTIME:-300}
       - SESSION_TTL=${SESSION_TTL:-3600}
     volumes:
-      - pentest-data:/data
-      - pentest-loot:/app/loot
+      - bodach-data:/data
+      - bodach-loot:/app/loot
     # Required for nmap SYN scanning and raw sockets
     cap_add:
       - NET_ADMIN
@@ -29,7 +29,7 @@ services:
       start_period: 30s
 
 volumes:
-  pentest-data:
+  bodach-data:
     driver: local
-  pentest-loot:
+  bodach-loot:
     driver: local
