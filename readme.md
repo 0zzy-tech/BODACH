@@ -1,7 +1,7 @@
 # Bodach
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Docker Hub](https://img.shields.io/docker/pulls/momomomomomomomomomo/bodach.svg)](https://hub.docker.com/r/momomomomomomomomomo/bodach)
+[![Docker Hub](https://img.shields.io/docker/pulls/0zzytech/bodach.svg)](https://hub.docker.com/r/0zzytech/bodach)
 
 > In folklore, **Bodach** is a sinister old man or bogeyman figure from Scottish and Gaelic tradition. It's often used for a spooky, mischievous presence.
 
@@ -65,14 +65,14 @@ cp .env.example .env
 # Edit .env — set your OLLAMA_API_KEY
 
 # 2. Pull and run
-docker pull momomomomomomomomomo/bodach:latest
+docker pull 0zzytech/bodach:latest
 docker run -d \
   --name BODACH \
   --cap-add NET_ADMIN \
   --cap-add NET_RAW \
   -p 8000:8000 \
   --env-file .env \
-  momomomomomomomomomo/bodach:latest
+  0zzytech/bodach:latest
 
 # 3. Open browser
 open http://localhost:8000
@@ -289,7 +289,7 @@ The image supports both `linux/amd64` and `linux/arm64`:
 ```bash
 docker buildx build \
   --platform linux/amd64,linux/arm64 \
-  -t momomomomomomomomomo/bodach:latest \
+  -t 0zzytech/bodach:latest \
   --push .
 ```
 
@@ -298,10 +298,10 @@ docker buildx build \
 ## Docker Hub
 
 ```
-docker pull momomomomomomomomomo/bodach:latest
+docker pull 0zzytech/bodach:latest
 ```
 
-[hub.docker.com/r/momomomomomomomomomo/bodach](https://hub.docker.com/r/momomomomomomomomomo/bodach)
+[hub.docker.com/r/0zzytech/bodach](https://hub.docker.com/r/0zzytech/bodach)
 
 ---
 
